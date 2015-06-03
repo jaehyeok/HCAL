@@ -20,7 +20,7 @@
 //
 //   $ root -b  
 //   root> .L HCALPedestalTableMaker.C++ 
-//   root> HCALPedestalTableMaker("../PFGntuple.root")
+//   root> HCALPedestalTableMaker("PFGntuple.root")
 //    
 // -----------------------------------------------------------------------------------
 // 
