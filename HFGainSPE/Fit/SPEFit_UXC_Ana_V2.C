@@ -59,11 +59,10 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
 
     ofstream  constants_file(out_fname.str().c_str(),ios_base::trunc); 
     //ofstream  constants_file1(out_fname1.str().c_str(),ios_base::trunc); 
-    constants_file<<"Run "<<run<<endl;
-    constants_file<<"type SPE"<<endl;
-    constants_file<<"LED_amplitude "<<LED_amp<<endl<<endl;
-
-    constants_file<<endl<<"Robox Column iDepth iPhi iEta Ped_mean Ped_mean_err Ped_RMS  Ped_RMS_err SPEPeak_RMS SPEPeak_RMS_err Gain Gain_err Normalized_Chi2 MeanPE_fit MeanPE_fit_err"<<endl;
+    constants_file<<"#Run "<<run<<endl;
+    constants_file<<"#type SPE"<<endl;
+    constants_file<<"#LED_amplitude "<<LED_amp<<endl;
+    constants_file<<"#Robox Column iDepth iPhi iEta Ped_mean Ped_mean_err Ped_RMS  Ped_RMS_err SPEPeak_RMS SPEPeak_RMS_err Gain Gain_err Normalized_Chi2 MeanPE_fit MeanPE_fit_err"<<endl;
 
     out_fname.str("");
     out_fname<<"SPEdistributions_Run_"<<run<<".txt";
@@ -312,8 +311,8 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 if(pedmode && (mode==1 || mode==4)) fit->SetParLimits(0, 0, 0.000316);
                 if(pedmode && mode!=1 && mode!=4) fit->SetParLimits(0, 0, 0.00005);
                 else fit->SetParLimits(0, 0, 10);
-                fit->FixParameter(1, fped->GetParameter(1));
-                fit->FixParameter(2, fped->GetParameter(2));
+                //fit->FixParameter(1, fped->GetParameter(1)); // FIXME
+                //fit->FixParameter(2, fped->GetParameter(2)); // FIXME
                 fit->SetParLimits(3, fped->GetParameter(2)*2, 350);
                 fit->SetParLimits(4, fped->GetParameter(2)*1.01, 250);
 
@@ -323,8 +322,8 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 double minfitrange = 0.;
                 hspe->Fit(fit, "MNQLB", "", minfitrange, maxfitrange);
                 //cout<<"initial p: "<<fped->GetParameter(1)<<" "<<fped->GetParError(1)<<" "<<fped->GetParameter(2)<<" "<<fped->GetParError(2)<<" "<<fit->GetParameter(4)<<" "<<fit->GetParError(4)<<" "<<fit->GetParameter(3)<<" "<<fit->GetParError(3)<<endl;
-                maxfitrange = fped->GetParameter(1)+4*fit->GetParameter(3)+fit->GetParameter(4);
-                if(maxfitrange<30) maxfitrange=30;
+                maxfitrange = fped->GetParameter(1)+4*fit->GetParameter(3)+fit->GetParameter(4)+30;
+                //if(maxfitrange<100) maxfitrange=100;
                  cout<<"new min ="<<minfitrange<<endl;
                  cout<<"new max ="<<maxfitrange<<endl;
                 if(100<maxfitrange) maxfitrange = 100;
@@ -486,11 +485,11 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 fit->SetLineColor(kRed);
                 fit->SetRange(minfitrange,maxfitrange);
                 fit->Draw("same");
-                myText(0.5,0.85,Form("Gain = %.1f +/- %.1f",fit->GetParameter(3),fit->GetParError(3)),1,0.04);
-                myText(0.5,0.8,Form("SPE RMS = %.1f +/- %.1f",fit->GetParameter(4),fit->GetParError(4)),1,0.04);
-                if(pedmode) myText(0.5,0.75,Form("Log(Mean PE) = %.1f",TMath::Log10(fit->GetParameter(0))),1,0.04);
-                else myText(0.5,0.75,Form("Mean PE = %.2f",fit->GetParameter(0)),1,0.04);
-                myText(0.5,0.7,Form("Chi^{2}/ndf =  %.1f",fit->GetChisquare()/fit->GetNDF()),1,0.04);
+                myText(0.5,0.83,Form("Gain = %.1f +/- %.1f",fit->GetParameter(3),fit->GetParError(3)),1,0.06);
+                myText(0.5,0.76,Form("SPE RMS = %.1f +/- %.1f",fit->GetParameter(4),fit->GetParError(4)),1,0.06);
+                if(pedmode) myText(0.5,0.69,Form("Log(Mean PE) = %.1f",TMath::Log10(fit->GetParameter(0))),1,0.06);
+                else myText(0.5,0.69,Form("Mean PE = %.2f",fit->GetParameter(0)),1,0.06);
+                myText(0.5,0.62,Form("Chi^{2}/ndf =  %.1f",fit->GetChisquare()/fit->GetNDF()),1,0.05);
                 /*	TArrow first = TArrow(maxfitrange,2,maxfitrange,0.1,0.04,"");
                     first.DrawLine(maxfitrange,2,maxfitrange,0.1);*/
                 pad2->cd();
@@ -502,10 +501,11 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                     Double_t error = hspe->GetBinError(k)/fit->Eval(hspe->GetBinCenter(k));
                     resid->SetBinContent(k,diff);
                     resid->SetBinError(k,error);
+                    //if(hspe->GetBinContent(k)) resid->SetBinContent(k,(hspe->GetBinContent(k)-fit->Eval(hspe->GetBinCenter(k)))/hspe->GetBinError(k));
                 }
 
                 resid->GetXaxis()->SetRangeUser(0, 100 /*200*/);
-                //	resid->SetMaximum(10);
+                resid->SetMaximum(3);
                 //	resid->SetMinimum(-10);
                 resid->SetLineColor(kBlack);
                 resid->SetMarkerStyle(20);
