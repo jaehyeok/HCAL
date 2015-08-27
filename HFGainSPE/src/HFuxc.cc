@@ -1,0 +1,328 @@
+// -*- C++ -*-
+//
+// Package:    HFuxc
+// Class:      HFuxc
+// 
+// system include files
+#include <memory>
+#include <cmath>
+
+// user include files
+#include "FWCore/Framework/interface/Frameworkfwd.h"
+#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/ESHandle.h"
+
+
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+#include "FWCore/ServiceRegistry/interface/Service.h"
+
+#include "EventFilter/HcalRawToDigi/interface/HcalHTRData.h"
+#include "EventFilter/HcalRawToDigi/interface/HcalDCCHeader.h"
+#include "EventFilter/HcalRawToDigi/interface/HcalUnpacker.h"
+#include "DataFormats/HcalDetId/interface/HcalOtherDetId.h"
+#include "DataFormats/HcalDigi/interface/HcalQIESample.h"
+
+
+#include "DataFormats/Common/interface/Handle.h"
+#include <DataFormats/FEDRawData/interface/FEDRawDataCollection.h>
+#include <DataFormats/FEDRawData/interface/FEDHeader.h>
+#include <DataFormats/FEDRawData/interface/FEDTrailer.h>
+#include <DataFormats/FEDRawData/interface/FEDNumbering.h>
+#include <DataFormats/FEDRawData/interface/FEDRawData.h>
+
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
+#include "CalibFormats/HcalObjects/interface/HcalDbService.h"
+#include "CalibFormats/HcalObjects/interface/HcalDbRecord.h"
+#include "CalibFormats/HcalObjects/interface/HcalCalibrations.h"
+#include "CalibFormats/HcalObjects/interface/HcalCoderDb.h"
+
+
+#include <TBDataFormats/HcalTBObjects/interface/HcalTBTriggerData.h>
+#include <RecoTBCalo/HcalTBObjectUnpacker/interface/HcalTBTriggerDataUnpacker.h>
+#include "RecoTBCalo/HcalTBObjectUnpacker/interface/HcalTBSlowDataUnpacker.h"
+
+
+#include "TH1F.h"
+#include "TH2F.h"
+#include "TGraphErrors.h"
+#include "TCanvas.h"
+#include "TFrame.h"
+#include "TProfile.h"
+
+
+#include "TFile.h"
+#include "TSystem.h"
+#include "TH1D.h"
+#include "TRandom.h"
+#include "TStopwatch.h"
+#include "TKey.h"
+#include "TTree.h"
+#include "TMath.h"
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+using namespace edm;
+using namespace std; 
+
+int channel; 
+int Ts ;
+
+
+
+/////////////////////////////////////////////////////////////
+
+
+
+TH2F * HFEtaPhiSMD1;
+TH2F * HFEtaPhiSRD1;
+
+TH2F * HFEtaPhiSMD2;
+TH2F * HFEtaPhiSRD2;
+
+TH2F * HFEtaPhiOver1;
+TH2F * HFEtaPhiOver2;
+
+TH2F * HistoTS[2][72][13];
+TH1F * HistoSum[2][72][13];
+
+int orbit;
+int L_orbit=0; int F_orbit=10000000;
+
+int pre_orbit = 0; int next_orbit=0;
+
+/////////////////////////////////////////////////////////////
+const int NCHANS = 25;
+static const float HFQIEConst = 2.6;
+////////////////////////////////////////////////////////////////////////////////////////////
+static const float adc2fC[128]={-0.5,0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5, 10.5,11.5,12.5,
+		   13.5,15.,17.,19.,21.,23.,25.,27.,29.5,32.5,35.5,38.5,42.,46.,50.,54.5,59.5,
+		   64.5,59.5,64.5,69.5,74.5,79.5,84.5,89.5,94.5,99.5,104.5,109.5,114.5,119.5,
+		   124.5,129.5,137.,147.,157.,167.,177.,187.,197.,209.5,224.5,239.5,254.5,272.,
+		   292.,312.,334.5,359.5,384.5,359.5,384.5,409.5,434.5,459.5,484.5,509.5,534.5,
+		   559.5,584.5,609.5,634.5,659.5,684.5,709.5,747.,797.,847.,897.,947.,997.,
+		   1047.,1109.5,1184.5,1259.5,1334.5,1422.,1522.,1622.,1734.5,1859.5,1984.5,
+		   1859.5,1984.5,2109.5,2234.5,2359.5,2484.5,2609.5,2734.5,2859.5,2984.5,
+		   3109.5,3234.5,3359.5,3484.5,3609.5,3797.,4047.,4297.,4547.,4797.,5047.,
+		   5297.,5609.5,5984.5,6359.5,6734.5,7172.,7672.,8172.,8734.5,9359.5,9984.5};
+////////////////////////////////////////////////////////////////////////////////////////////
+
+int QIECh[]={18,24,13,19,20,14,22,16,17,23,15,21,6,12,1,7,8,2,10,4,5,11,3,9};
+int cde[]={1,2,2,1,2,1,2,1,1,2,1,2,1,2,1,2,2,1,2,1,1,2,1,2};
+int ceta[]={39,39,40,40,37,37,38,38,36,36,35,35,34,34,33,33,31,31,32,32,30,30,29,29};
+
+double hfRunType=0; //Initial value
+
+class HFuxc : public edm::EDAnalyzer {
+public:
+
+  edm::Service<TFileService> fs;
+  explicit HFuxc(const edm::ParameterSet&);
+  //explicit HFuxc(const edm::ParameterSet&,const edm::Event&, const edm::EventSetup& );
+
+ ~HFuxc();
+
+  
+  int HFside;  
+  int  runno;
+
+
+   std::map < string, TH1F* > histoContainer; 
+   std::map < string, int> QieContainer;  
+
+  float N_event;
+  double getTime(double fData[10], double& fSum );
+  int getTSMax(double* fData, int fTS);
+
+private:
+
+
+  virtual void beginJob();
+  virtual void analyze(const edm::Event&, const edm::EventSetup&);
+  virtual void endJob() ;
+
+  // ----------member data ---------------------------
+
+  //    edm::InputTag hcalDigiLabel_;
+
+};
+
+
+//
+
+HFuxc::HFuxc(const edm::ParameterSet& iConfig){
+
+  //Original ones, modified below
+
+
+N_event=0;
+
+ for(int i=0;i<24;i++){
+  char qn[1024];
+  sprintf(qn,"%dd%d",ceta[i],cde[i]);
+  QieContainer[qn]=QIECh[i];
+ }
+ 
+ 
+ TFileDirectory Common          = fs->mkdir("CommonDir");
+ TFileDirectory EtaPhi          = Common.mkdir("EtaPhiDir");
+ TFileDirectory ResPlot         = Common.mkdir("ResPlotDir");
+ TFileDirectory ResPlotTS       = Common.mkdir("TSPlotDir");
+ //TFileDirectory       = PinDDir.mkdir("SigPlots");
+ /*
+ TFileDirectory PinDShapeDir    = PinDDir.mkdir("ShapePlots");
+ TFileDirectory PDTTPrateDir    = PinDDir.mkdir("PDTPPrate");
+ TFileDirectory Common          = fs->mkdir("Common");
+ */
+
+
+ HFEtaPhiSMD1    = Common.make<TH2F>("HF Eta and Phi Mean map Dep 1","HF Eta and Phi  Mean map Dep 1",90,-45,45,73,0,73);
+ HFEtaPhiSRD1    = Common.make<TH2F>("HF Eta and Phi RMS  map Dep 1","HF Eta and Phi  RMS  map Dep 1",90,-45,45,73,0,73);
+
+ HFEtaPhiSMD2    = Common.make<TH2F>("HF Eta and Phi  Mean map Dep 2","HF Eta and Phi  Mean map Dep 2",90,-45,45,73,0,73);
+ HFEtaPhiSRD2    = Common.make<TH2F>("HF Eta and Phi  RMS  map Dep 2","HF Eta and Phi  RMS  map Dep 2",90,-45,45,73,0,73);
+
+ HFEtaPhiOver1    = Common.make<TH2F>("HF Eta and Phi Over Dep 1","HF Eta and Phi Over Dep 1",90,-45,45,73,0,73);
+ HFEtaPhiOver2    = Common.make<TH2F>("HF Eta and Phi Over Dep 2","HF Eta and Phi Over Dep 2",90,-45,45,73,0,73);
+
+ ///Example Plot
+
+
+ char fname[1024], ftitl[1024];
+
+ for(int id=1;id<3;id++){
+   for(int ip=1;ip<72;ip=ip+2){
+     for(int ie=0;ie<13;ie++){
+       sprintf(fname,"Histo_for_Depth_%i_Eta_%i_Phi_%i",id,ie+29,ip);
+       sprintf(ftitl,"Histo_for_Depth_%i_Eta_%i_Phi_%i",id,ie+29,ip);
+       //HistoSum[id-1][ip][ie] = ResPlot.make<TH1F>(fname,ftitl,100,-20,100);
+       HistoSum[id-1][ip][ie] = ResPlot.make<TH1F>(fname,ftitl,15000,0,15000);
+       HistoTS[id-1][ip][ie] = ResPlotTS.make<TH2F>(fname,ftitl,10000,0,10000,10,0,10);
+       //HistoSum[id-1][ip][ie] = ResPlot.make<TH1F>(fname,ftitl,100,0,10000);
+     }
+   }
+ }
+
+
+}
+
+
+HFuxc::~HFuxc(){}
+
+
+void HFuxc::analyze(const edm::Event& e, const edm::EventSetup& c) {
+
+  int nTS;
+  int this_evn = e.id().event(); 
+
+  runno=e.id().run();
+  pre_orbit = orbit;
+
+  try{
+      edm::Handle<HFDigiCollection> hf;
+      e.getByLabel("hcalDigis",hf);
+
+      for(HFDigiCollection::const_iterator digi=hf->begin();digi!=hf->end();digi++){
+
+          if(this_evn<101) continue;
+
+          double DEPTH =  digi->id().depth();
+          double ETA   =  digi->id().ieta();
+          double IPHI  = digi->id().iphi();
+
+          nTS=digi->size();Ts=nTS;
+          double qiesum = 0;
+
+          if(ETA<0) continue;
+
+          for(int i=0;i<nTS;i++){
+              if(i >= 2 && i <= 5) qiesum +=adc2fC[digi->sample(i).adc()];
+
+              if(digi->sample(i).adc()>125) {
+                  cout<<"Saturation depth iphi ieta  "<<DEPTH<<"  "<<IPHI<<"  "<<ETA<< " Value "<<digi->sample(i).adc()<<endl;
+              }
+
+              if(ETA>0) {
+                  if(IPHI<72){
+                      int iet = (int) ETA;
+                      int ide = (int) DEPTH; int iph = (int) IPHI; 
+                      if((digi->sample(i).adc()>125)&&(ide==1)) HFEtaPhiOver1->Fill(iet,iph);
+                      if((digi->sample(i).adc()>125)&&(ide==2)) HFEtaPhiOver2->Fill(iet,iph);
+                      HistoTS[ide-1][iph][iet-29]->Fill(adc2fC[digi->sample(i).adc()],i);
+                  }
+              }
+
+          }
+          if(ETA>0) {
+              if(IPHI<72){
+                  int iet = (int) ETA;
+                  int ide = (int) DEPTH; int iph = (int) IPHI; 
+
+                  HistoSum[ide-1][iph][iet-29]->Fill(qiesum);
+              }
+          }
+
+
+      }
+
+  }
+       catch(...){}
+  
+}
+ 
+
+
+
+// ------------ method called once each job just before starting event loop  ------------
+void 
+HFuxc::beginJob()
+{
+  cout<<"Begin HFuxc job...   "<<endl;
+}
+// ------------ method called once each job just after ending the event loop  ------------
+void 
+HFuxc::endJob() {  
+  cout<<"Begin HFuxc End job...   "<<endl;
+
+
+
+
+
+int icc=0;
+ for(int id=1;id<3;id++){
+   for(int ip=1;ip<72;ip=ip+2){
+     for(int ie=1;ie<14;ie++){
+
+
+       icc++;
+       double Hmean = HistoSum[id-1][ip][ie-1]->GetMean(1);
+       double HRMS  = HistoSum[id-1][ip][ie-1]->GetRMS(1);
+
+
+
+       if(Hmean!=0){
+	 if(id==1){
+	   HFEtaPhiSMD1->Fill( (float) ie + 28., (float) ip,  Hmean);
+	   HFEtaPhiSRD1->Fill( (float) ie + 28., (float) ip,  HRMS);
+	 }
+	 if(id==2){
+	   HFEtaPhiSMD2->Fill( (float) ie + 28., (float) ip,  Hmean);
+	   HFEtaPhiSRD2->Fill( (float) ie + 28., (float) ip,  HRMS);
+	 }
+       }
+
+
+     }
+   }
+ }
+
+ //cout<<"ICC "<<icc<<endl;
+  
+}
+
+//define this as a plug-in
+DEFINE_FWK_MODULE( HFuxc );
