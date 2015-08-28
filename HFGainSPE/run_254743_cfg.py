@@ -10,8 +10,8 @@ print "Running on: " + str(RUNNUMBER)
 
 process.source = cms.Source("HcalTBSource",
   fileNames = cms.untracked.vstring(
-"file:root://eoscms.cern.ch//eos/cms/store/group/dpg_hcal/comm_hcal/LS1/USC_254730.root",
-"file:root://eoscms.cern.ch//eos/cms/store/group/dpg_hcal/comm_hcal/LS1/USC_254743.root"
+"file:root://eoscms.cern.ch//eos/cms/store/group/dpg_hcal/comm_hcal/LS1/USC_254743.root",
+"file:root://eoscms.cern.ch//eos/cms/store/group/dpg_hcal/comm_hcal/LS1/USC_254730.root"
 )
 )
  
@@ -77,6 +77,7 @@ process.load("RecoLocalCalo.Configuration.hcalLocalReco_cff")
 #process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hf_cfi")
 
 
+# You might need to change global tag:
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_HLT_v1', '') # 2015C

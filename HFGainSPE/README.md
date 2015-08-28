@@ -10,6 +10,8 @@ $ ./runOnUxc.sh [RUN NUMBER]
 $ cmsRun run_[RUN NUMBER]_cfg.py
 ```
 
+As the arguments shows, it runs for one run. For the study on 28 Aug 2015, I manually put one more file in the config file after making the config file. 
+
 (2) Fit and extract gain (+ other information)  
 
 ```
@@ -25,3 +27,12 @@ ROOT file : test_mode_1.root
 ```
 
 They have the same information, but in different formats. 
+
+Then, I used the following two scripts for further analyses :  
+
+```
+* SPESummary.C : to make summary plots 
+* SPECompare.C : to make comparison between Katrinas and my result 
+``` 
+
+The gain measurement from Katrina is in the `Fit/PMTGainDB` directory.

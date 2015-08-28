@@ -239,8 +239,10 @@ void HFuxc::analyze(const edm::Event& e, const edm::EventSetup& c) {
 
           if(ETA<0) continue;
 
-          for(int i=0;i<nTS;i++){
+          for(int i=0;i<nTS;i++){ 
               if(i >= 2 && i <= 5) qiesum +=adc2fC[digi->sample(i).adc()];
+          
+              cout << "iTS: " << i << " :: " << adc2fC[digi->sample(i).adc()] << endl; // FIXME
 
               if(digi->sample(i).adc()>125) {
                   cout<<"Saturation depth iphi ieta  "<<DEPTH<<"  "<<IPHI<<"  "<<ETA<< " Value "<<digi->sample(i).adc()<<endl;

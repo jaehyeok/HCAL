@@ -115,15 +115,15 @@ process.TFileService = cms.Service("TFileService",
 
 
 ##process.load("EventFilter.HcalRawToDigi.HcalRawToDigi_cfi")
-process.load("Configuration.StandardSequences.Geometry_cff")
+process.load("Configuration.Geometry.GeometryIdeal_cff") 
 ###process.load("Configuration.StandardSequences.RawToDigi_Data_cff")
 process.load("RecoLocalCalo.Configuration.hcalLocalReco_cff")
-process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hf_cfi")
+#process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hf_cfi")
 
 # You might need to change global tag:
-process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = 'GR_R_60_V9::All'
-process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
+from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_HLT_v1', '') # 2015C
 
 #------------------------------------------------------------
 # Define paths: DIGI, RECO
