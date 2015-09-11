@@ -31,7 +31,7 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
       mode 4: TH1F * HistoEachTSsub[2][72][13];       // no sum but ecah TS(2-5)
       mode5-15 TH1F * HistoSeparateTS[2][72][13][mode-5] // draw only TS = mode-5
      */
-    TString fLEDname = Form("../Run_%i.root",run);
+    TString fLEDname = Form("Run_%i.root",run);
     TString fPEDname = fLEDname;
     TString rootname = filname+"_mode_";
     rootname+=mode;
@@ -104,29 +104,29 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
     // double binsX_ped[NnewBins_ped] = {0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84,87,90,93,96,99,200,350,500};
 
     //double binsX[NnewBins] = {0,6,12,18,24,30,33,36,39,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84,87,90,93,96,99,102,105,108,111,114,117,120,123,126,129,132,135,138,141,144,147,150,153,156,159,162,165,168,171,174,177,180,190,200,210,220,230,240,250,266,282,298,316,336,356,378,404,430,456,482,500};	 
-    TH1F * hspe, *resid;
+    TH1F *hspe[8], *resid[8];
     if(!pedmode) {
         if(mode<3){ 
-            hspe = new TH1F("hspe","hspe",NnewBins-1,binsX);
-            resid = new TH1F("resid","resid",NnewBins-1,binsX);
+            for(int i=0; i<8; i++) hspe[i] = new TH1F(Form("hspe_pmt%i",i+1),Form("hspe_pmt%i",i+1),NnewBins-1,binsX);
+            for(int i=0; i<8; i++) resid[i] = new TH1F(Form("resid_pmt%i",i+1),Form("resid_pmt%i",i+1),NnewBins-1,binsX);
         }
         else{
-            hspe = new TH1F("hspe","hspe",NnewBins_single-1,binsX_single);
-            resid = new TH1F("resid","resid",NnewBins_single-1,binsX_single);
+            for(int i=0; i<8; i++) hspe[i] = new TH1F(Form("hspe_pmt%i",i+1),Form("hspe_pmt%i",i+1),NnewBins_single-1,binsX_single);
+            for(int i=0; i<8; i++) resid[i] = new TH1F(Form("resid_pmt%i",i+1),Form("resid_pmt%i",i+1),NnewBins_single-1,binsX_single);
         }
     }
     else if(pedmode) {
         if(mode<3){ 
-            hspe = new TH1F("hspe","hspe",NnewBins_ped-1,binsX);
-            resid = new TH1F("resid","resid",NnewBins_ped-1,binsX);
+            for(int i=0; i<8; i++) hspe[i] = new TH1F(Form("hspe_pmt%i",i+1),Form("hspe_pmt%i",i+1),NnewBins_ped-1,binsX);
+            for(int i=0; i<8; i++) resid[i] = new TH1F(Form("resid_pmt%i",i+1),Form("resid_pmt%i",i+1),NnewBins_ped-1,binsX);
         }
         else{
-            hspe = new TH1F("hspe","hspe",NnewBins_ped_single-1,binsX_single);
-            resid = new TH1F("resid","resid",NnewBins_ped_single-1,binsX_single);
+            for(int i=0; i<8; i++) hspe[i] = new TH1F(Form("hspe_pmt%i",i+1),Form("hspe_pmt%i",i+1),NnewBins_ped_single-1,binsX_single);
+            for(int i=0; i<8; i++) resid[i] = new TH1F(Form("resid_pmt%i",i+1),Form("resid_pmt%i",i+1),NnewBins_ped_single-1,binsX_single);
         }
     }
-    hspe->Sumw2();
-    resid->Sumw2();
+    for(int i=0; i<8; i++) hspe[i]->Sumw2();
+    for(int i=0; i<8; i++) resid[i]->Sumw2();
 
 
 
@@ -200,6 +200,9 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
       for(int iEta = MinEta; iEta <= MaxEta; iEta++){*/
     for(int irbx = 1; irbx<37; irbx++){
         for(int ibb= 1; ibb<4;ibb++){
+            
+            //if(irbx!=9 || ibb!=3) continue; // FIXME
+            
             drawflag[irbx][ibb] = false;
             char canvname[16];
             sprintf(canvname, "c_%d_%d", irbx,ibb);
@@ -219,10 +222,10 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 //	cout<<"post clone depth eta phi pmt int "<<iDepth<<" "<<iEta<<" "<<iPhi<<" "<<ipmt<<" "<<hspe_temp->Integral()<<endl;
                 sprintf(spehistname,"ped %d %d %d",iDepth,iEta,iPhi);
                 TH1F *hped = (TH1F *)PED[iDepth][iEta][iPhi]->Clone(spehistname);
-                hspe->Reset();
-                resid->Reset();
+                hspe[ipmt-1]->Reset();
+                resid[ipmt-1]->Reset();
                 sprintf (spehistname, "SumLED_Depth_%d_Eta_%d_Phi_%d",iDepth,iEta,iPhi);
-                hspe->SetTitle(spehistname);
+                hspe[ipmt-1]->SetTitle(spehistname);
                 sprintf(spehistname,"cp_Num_Above_Depth_%i_Eta_%i_Phi_%i",iDepth,iEta,iPhi);
 //                TH1F *chg_share = new TH1F(spehistname,spehistname,10,0,10);
 
@@ -237,20 +240,20 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 for(int ib=1; ib<=hspe_temp->GetNbinsX(); ib++) {
                     double bin_center = hspe_temp->GetBinCenter(ib);
 
-                    if(bin_center>hspe->GetXaxis()->GetXmax()) continue;
-                    int newbin = hspe->FindBin(bin_center);
-                    double new_content = hspe->GetBinContent(newbin) + hspe_temp->GetBinContent(ib);
-                    double new_error = sqrt(pow(hspe->GetBinError(newbin),2)+pow(hspe_temp->GetBinError(ib),2));
-                    hspe->SetBinContent(newbin,new_content);
-                    hspe->SetBinError(newbin,new_error);
+                    if(bin_center>hspe[ipmt-1]->GetXaxis()->GetXmax()) continue;
+                    int newbin = hspe[ipmt-1]->FindBin(bin_center);
+                    double new_content = hspe[ipmt-1]->GetBinContent(newbin) + hspe_temp->GetBinContent(ib);
+                    double new_error = sqrt(pow(hspe[ipmt-1]->GetBinError(newbin),2)+pow(hspe_temp->GetBinError(ib),2));
+                    hspe[ipmt-1]->SetBinContent(newbin,new_content);
+                    hspe[ipmt-1]->SetBinError(newbin,new_error);
                 }
-                TH1F* hspe_unscaled = (TH1F*)hspe->Clone("hspe_unscaled");
+                TH1F* hspe_unscaled = (TH1F*)hspe[ipmt-1]->Clone("hspe_unscaled");
                 //renormalize bins of new SPE histogram
-                for(int ib=1; ib<=hspe->GetNbinsX(); ib++) {
-                    double new_content = hspe->GetBinContent(ib)/hspe->GetXaxis()->GetBinWidth(ib)*hspe_temp->GetXaxis()->GetBinWidth(1);
-                    double new_error = hspe->GetBinError(ib)/hspe->GetXaxis()->GetBinWidth(ib)*hspe_temp->GetXaxis()->GetBinWidth(1);
-                    hspe->SetBinContent(ib,new_content);
-                    hspe->SetBinError(ib,new_error);
+                for(int ib=1; ib<=hspe[ipmt-1]->GetNbinsX(); ib++) {
+                    double new_content = hspe[ipmt-1]->GetBinContent(ib)/hspe[ipmt-1]->GetXaxis()->GetBinWidth(ib)*hspe_temp->GetXaxis()->GetBinWidth(1);
+                    double new_error = hspe[ipmt-1]->GetBinError(ib)/hspe[ipmt-1]->GetXaxis()->GetBinWidth(ib)*hspe_temp->GetXaxis()->GetBinWidth(1);
+                    hspe[ipmt-1]->SetBinContent(ib,new_content);
+                    hspe[ipmt-1]->SetBinError(ib,new_error);
                 }
                 //	cout<<"pre temp check "<<ipmu<<" integral "<<hspe_temp->Integral()<<endl; 
 
@@ -271,9 +274,9 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 hped->Fit(fped,"NQR");
                 double pploc = fped->GetParameter(1), ppwidth = fped->GetParameter(2);
                 // DEBUG	
-                cout<<"depth "<<iDepth<<" ieta "<<iEta<<" iphi "<<iPhi <<" pploc "<<pploc<<" ppwidth "<<ppwidth<<endl;
+                //cout<<"depth "<<iDepth<<" ieta "<<iEta<<" iphi "<<iPhi <<" pploc "<<pploc<<" ppwidth "<<ppwidth<<endl;
                 //hspe->Fit(fped, "NQ", "", pploc - 3*ppwidth, pploc + ppwidth);  
-                hspe->Fit(fped, "NQ", "", pploc - 3*ppwidth, pploc + 3*ppwidth);  
+                hspe[ipmt-1]->Fit(fped, "NQ", "", pploc - 2*ppwidth, pploc + 2*ppwidth);  
 
                 // 
                 //estimate SPE peak location
@@ -281,23 +284,23 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 int max_SPE_bin, maxbin, Nbins;
                 double max_SPE_height=0, minheight, max_SPE_location;
                 bool minflag = false;
-                maxbin=hspe->FindBin(fped->GetParameter(1)); //location of pedestal peak
-                minheight=hspe->GetBinContent(maxbin); //initialize minheight
-                Nbins = hspe->GetNbinsX();
+                maxbin=hspe[ipmt-1]->FindBin(fped->GetParameter(1)); //location of pedestal peak
+                minheight=hspe[ipmt-1]->GetBinContent(maxbin); //initialize minheight
+                Nbins = hspe[ipmt-1]->GetNbinsX();
                 for(int j=maxbin+1; j<Nbins-1; j++) { //start from pedestal peak and loop through bins
-                    if(hspe->GetBinContent(j) > minheight && !minflag) minflag=true; //only look for SPE peak when minflag=true
-                    if(hspe->GetBinContent(j) < minheight )  minheight = hspe->GetBinContent(j);
-                    if(minflag && hspe->GetBinContent(j) > max_SPE_height){
+                    if(hspe[ipmt-1]->GetBinContent(j) > minheight && !minflag) minflag=true; //only look for SPE peak when minflag=true
+                    if(hspe[ipmt-1]->GetBinContent(j) < minheight )  minheight = hspe[ipmt-1]->GetBinContent(j);
+                    if(minflag && hspe[ipmt-1]->GetBinContent(j) > max_SPE_height){
                         max_SPE_bin = j;
-                        max_SPE_location = hspe->GetBinCenter(max_SPE_bin);
-                        max_SPE_height = hspe->GetBinContent(j);
+                        max_SPE_location = hspe[ipmt-1]->GetBinCenter(max_SPE_bin);
+                        max_SPE_height = hspe[ipmt-1]->GetBinContent(j);
                     }
                 } //start from pedestal peak and loop through bins
                 //find minimum bin between pedestal and SPE peaks
-                hspe->GetXaxis()->SetRange(maxbin,max_SPE_bin);
-                int minbin = hspe->GetMinimumBin(); 
-                double minbin_location = hspe->GetBinCenter(minbin);
-                hspe->GetXaxis()->SetRange(1,Nbins);	    
+                hspe[ipmt-1]->GetXaxis()->SetRange(maxbin,max_SPE_bin);
+                int minbin = hspe[ipmt-1]->GetMinimumBin(); 
+                double minbin_location = hspe[ipmt-1]->GetBinCenter(minbin);
+                hspe[ipmt-1]->GetXaxis()->SetRange(1,Nbins);	    
 
                 TF1 *fit = new TF1("fit", FitFun, 0, 50, 5);
 
@@ -320,31 +323,31 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
 
                 double maxfitrange = 100.;    
                 double minfitrange = 0.;
-                hspe->Fit(fit, "MNQLB", "", minfitrange, maxfitrange);
+                hspe[ipmt-1]->Fit(fit, "MNQLB", "", minfitrange, maxfitrange);
                 //cout<<"initial p: "<<fped->GetParameter(1)<<" "<<fped->GetParError(1)<<" "<<fped->GetParameter(2)<<" "<<fped->GetParError(2)<<" "<<fit->GetParameter(4)<<" "<<fit->GetParError(4)<<" "<<fit->GetParameter(3)<<" "<<fit->GetParError(3)<<endl;
                 maxfitrange = fped->GetParameter(1)+4*fit->GetParameter(3)+fit->GetParameter(4)+30;
                 //if(maxfitrange<100) maxfitrange=100;
-                 cout<<"new min ="<<minfitrange<<endl;
-                 cout<<"new max ="<<maxfitrange<<endl;
+                // cout<<"new min ="<<minfitrange<<endl;
+                // cout<<"new max ="<<maxfitrange<<endl;
                 if(100<maxfitrange) maxfitrange = 100;
-                hspe->Fit(fit, "MNQLB", "", minfitrange, maxfitrange);
+                hspe[ipmt-1]->Fit(fit, "MNQLB", "", minfitrange, maxfitrange);
                 //cout<<"chi2 = "<<fit->GetChisquare()<<endl;
                 //calculate NDOF of fit excluding bins with 0 entries
-                int myNDOF=-3; //three free parameters
-                for(int j=hspe->FindBin(minfitrange); j<=hspe->FindBin(maxfitrange); j++) { //loop through fitted spe bins
-                    if(hspe->GetBinContent(j)) myNDOF++;
+                int myNDOF=-5; //three free parameters // FIXME
+                for(int j=hspe[ipmt-1]->FindBin(minfitrange); j<=hspe[ipmt-1]->FindBin(maxfitrange); j++) { //loop through fitted spe bins
+                    if(hspe[ipmt-1]->GetBinContent(j)) myNDOF++;
                 } //loop through fitted spe bins
 
                 //cout<<"ndf= "<<myNDOF<<endl;
                 //calculate means and integrals of the fit and data
                 double fint, fint_error, hint, favg, havg;
                 int temp_lowbin, temp_highbin;
-                temp_lowbin = hspe->FindBin(minfitrange);
-                temp_highbin = hspe->FindBin(maxfitrange);
+                temp_lowbin = hspe[ipmt-1]->FindBin(minfitrange);
+                temp_highbin = hspe[ipmt-1]->FindBin(maxfitrange);
                 hspe_unscaled->GetXaxis()->SetRangeUser(minfitrange, maxfitrange);
                 havg = hspe_unscaled->GetMean();
-                hint = hspe->Integral(temp_lowbin,temp_highbin,"width");
-                double min_frange = hspe->GetBinLowEdge(temp_lowbin);
+                hint = hspe[ipmt-1]->Integral(temp_lowbin,temp_highbin,"width");
+                double min_frange = hspe[ipmt-1]->GetBinLowEdge(temp_lowbin);
                 favg = fit->Mean(min_frange, maxfitrange);
                 fint = fit->Integral(min_frange, maxfitrange);
                 //fint_error = fit->IntegralError(min_frange, maxfitrange);
@@ -396,14 +399,16 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
 
 
                 //orig	constants_file<<LED_amp<<" "<<iDepth<<" "<<iPhi<<" "<<iEta<<" "<<fped->GetParameter(1)<<" "<<fped->GetParError(1)<<" "<<fped->GetParameter(2)<<" "<<fped->GetParError(2)<<" "<<fit->GetParameter(4)<<" "<<fit->GetParError(4)<<" "<<fit->GetParameter(3)<<" "<<fit->GetParError(3)<<" "<<fit->GetChisquare()/myNDOF/*fit->GetNDF()*/<<" "<<fit->GetParameter(0)<<" "<<fit->GetParError(0)<<" "<<mu<<" "<<PE5flag<<endl;
-                constants_file<<rbx<<" "<<col<<" "<<iDepth<<" "<<iPhi<<" "<<iEta<<" "<<fped->GetParameter(1)<<" "<<fped->GetParError(1)<<" "<<fped->GetParameter(2)<<" "<<fped->GetParError(2)<<" "<<fit->GetParameter(4)<<" "<<fit->GetParError(4)<<" "<<fit->GetParameter(3)<<" "<<fit->GetParError(3)<<" "<<fit->GetChisquare()/fit->GetNDF()/*myNDOF*/<<" "<<fit->GetParameter(0)<<" "<<fit->GetParError(0)<<endl;
+                //orig from RH : using fped for pedestal peak info
+                //constants_file<<rbx<<" "<<col<<" "<<iDepth<<" "<<iPhi<<" "<<iEta<<" "<<fped->GetParameter(1)<<" "<<fped->GetParError(1)<<" "<<fped->GetParameter(2)<<" "<<fped->GetParError(2)<<" "<<fit->GetParameter(4)<<" "<<fit->GetParError(4)<<" "<<fit->GetParameter(3)<<" "<<fit->GetParError(3)<<" "<<fit->GetChisquare()/myNDOF/*fit->GetNDF()*/<<" "<<fit->GetParameter(0)<<" "<<fit->GetParError(0)<<endl;
+                constants_file<<rbx<<" "<<col<<" "<<iDepth<<" "<<iPhi<<" "<<iEta<<" "<<fit->GetParameter(1)<<" "<<fit->GetParError(1)<<" "<<fit->GetParameter(2)<<" "<<fit->GetParError(2)<<" "<<fit->GetParameter(4)<<" "<<fit->GetParError(4)<<" "<<fit->GetParameter(3)<<" "<<fit->GetParError(3)<<" "<<fit->GetChisquare()/myNDOF/*fit->GetNDF()*/<<" "<<fit->GetParameter(0)<<" "<<fit->GetParError(0)<<endl;
 
                 //cout<<"irbx ibb ipmt"<<irbx<<" "<<ibb<<" "<<ipmt<<endl;
                 //cout<<"iPhi iEta iDepth "<<iPhi<<" "<<iEta<<" "<<iDepth<<" col RBX "<<col<<" "<<rbx<<endl;
-                Ped_mean[0]->Fill(col,rbx,fped->GetParameter(1));
-                Ped_mean_err[0]->Fill(col,rbx,fped->GetParError(1));
-                Ped_RMS[0]->Fill(col,rbx,fped->GetParameter(2));
-                Ped_RMS_err[0]->Fill(col,rbx,fped->GetParError(2));
+                Ped_mean[0]->Fill(col,rbx,fit->GetParameter(1));
+                Ped_mean_err[0]->Fill(col,rbx,fit->GetParError(1));
+                Ped_RMS[0]->Fill(col,rbx,fit->GetParameter(2));
+                Ped_RMS_err[0]->Fill(col,rbx,fit->GetParError(2));
                 Gain[0]->Fill(col,rbx,fit->GetParameter(3));
                 Gain_err[0]->Fill(col,rbx,fit->GetParError(3));
                 SPEPeak_RMS[0]->Fill(col,rbx,fit->GetParameter(4));
@@ -415,10 +420,10 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 //ShareMap[0]->Fill(col,rbx,chg_frac);
 
 
-                proj_Ped_mean[0]->Fill(fped->GetParameter(1));
-                proj_Ped_mean_err[0]->Fill(fped->GetParError(1));
-                proj_Ped_RMS[0]->Fill(fped->GetParameter(2));
-                proj_Ped_RMS_err[0]->Fill(fped->GetParError(2));
+                proj_Ped_mean[0]->Fill(fit->GetParameter(1));
+                proj_Ped_mean_err[0]->Fill(fit->GetParError(1));
+                proj_Ped_RMS[0]->Fill(fit->GetParameter(2));
+                proj_Ped_RMS_err[0]->Fill(fit->GetParError(2));
                 proj_Gain[0]->Fill(fit->GetParameter(3));
                 proj_Gain_err[0]->Fill(fit->GetParError(3));
                 proj_SPEPeak_RMS[0]->Fill(fit->GetParameter(4));
@@ -430,7 +435,7 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                 //proj_ShareMap[0]->Fill(chg_frac);
                 /*float frac = ROOT::Math::gaussian_cdf_c(100.,sqrt(pow(fit->GetParameter(4),2)+pow(fped->GetParameter(2),2)) , fit->GetParameter(3)+fped->GetParameter(1));
                   float trig = frac*fit->GetParameter(0)*pow(10,9)/(25.);*/
-                float frac = hspe->Integral(hspe->FindBin(100),hspe->FindBin(499),"width")/ hspe->Integral(hspe->FindBin(0),hspe->FindBin(499),"width");
+                float frac = hspe[ipmt-1]->Integral(hspe[ipmt-1]->FindBin(100),hspe[ipmt-1]->FindBin(499),"width")/ hspe[ipmt-1]->Integral(hspe[ipmt-1]->FindBin(0),hspe[ipmt-1]->FindBin(499),"width");
                 float trig = frac*pow(10,9)/(100.);
                 Selftrigger_estimate[0]->Fill(col,rbx,trig);
                 proj_Selftrigger_estimate[0]->Fill(trig);
@@ -471,53 +476,68 @@ void SPEFit_UXC_Ana_V2(int run=254743, TString filname="test", bool pmode=false,
                   gPad->SetRightMargin(0.01);
                   gPad->SetBottomMargin(0.1);
                   gPad->SetLogy(true);*/
-                hspe->GetXaxis()->SetRangeUser(0, 100 /*200*/ /*300*//*508*/);
-                hspe->SetLineColor(kBlue);
-                //hspe->SetLineColor(kBlack);
-                hspe->SetMarkerColor(kBlack);
-                hspe->SetMarkerSize(1);
-                hspe->SetMarkerStyle(20);
-                hspe->SetStats(false);
+                hspe[ipmt-1]->GetXaxis()->SetRangeUser(0, 100 /*200*/ /*300*//*508*/);
+                hspe[ipmt-1]->SetLineColor(kBlue);
+                //hspe[ipmt-1]->SetLineColor(kBlack);
+                hspe[ipmt-1]->SetMarkerColor(kBlack);
+                hspe[ipmt-1]->SetMarkerSize(1);
+                hspe[ipmt-1]->SetMarkerStyle(20);
+                hspe[ipmt-1]->SetStats(false);
 
-                hspe->DrawClone("HIST");
+                hspe[ipmt-1]->Draw("HIST");
 
                 fit->SetLineWidth(1);
                 fit->SetLineColor(kRed);
                 fit->SetRange(minfitrange,maxfitrange);
                 fit->Draw("same");
-                myText(0.5,0.83,Form("Gain = %.1f +/- %.1f",fit->GetParameter(3),fit->GetParError(3)),1,0.06);
-                myText(0.5,0.76,Form("SPE RMS = %.1f +/- %.1f",fit->GetParameter(4),fit->GetParError(4)),1,0.06);
-                if(pedmode) myText(0.5,0.69,Form("Log(Mean PE) = %.1f",TMath::Log10(fit->GetParameter(0))),1,0.06);
+                myText(0.5,0.83,Form("Gain = %.2f +/- %.2f",fit->GetParameter(3),fit->GetParError(3)),1,0.05);
+                myText(0.5,0.76,Form("SPE RMS = %.2f +/- %.2f",fit->GetParameter(4),fit->GetParError(4)),1,0.05);
+                if(pedmode) myText(0.5,0.69,Form("Log(Mean PE) = %.2f",TMath::Log10(fit->GetParameter(0))),1,0.05);
                 else myText(0.5,0.69,Form("Mean PE = %.2f",fit->GetParameter(0)),1,0.06);
-                myText(0.5,0.62,Form("Chi^{2}/ndf =  %.1f",fit->GetChisquare()/fit->GetNDF()),1,0.05);
+                myText(0.5,0.62,Form("Chi^{2}/ndf =  %.2f",fit->GetChisquare()/myNDOF/*fit->GetNDF()*/),1,0.05);
+                myText(0.5,0.55,Form("Ped = %.2f +/- %.2f",fit->GetParameter(1),fit->GetParError(1)),1,0.05);
+                myText(0.5,0.48,Form("Ped RMS = %.2f +/- %.2f",fit->GetParameter(2),fit->GetParError(2)),1,0.05);
                 /*	TArrow first = TArrow(maxfitrange,2,maxfitrange,0.1,0.04,"");
                     first.DrawLine(maxfitrange,2,maxfitrange,0.1);*/
+                
+                // Draw SPE peak 
+                TF1 *spefunc = new TF1("spefunc",SPEFunc,0,50,5); 
+                spefunc->SetParameters(fit->GetParameter(0),fit->GetParameter(1),fit->GetParameter(2),fit->GetParameter(3),fit->GetParameter(4));
+                spefunc->SetLineColor(kGreen);
+                spefunc->SetLineWidth(1);
+                spefunc->Draw("same");
+                
+                // Draw PED peak 
+                TF1 *pedfunc = new TF1("pedfunc",PEDFunc,0,50,3); 
+                pedfunc->SetParameters(fit->GetParameter(0),fit->GetParameter(1),fit->GetParameter(2));
+                pedfunc->SetLineColor(kBlack);
+                pedfunc->SetLineWidth(1);
+                pedfunc->Draw("same");
+                
                 pad2->cd();
 
-
-
-                for(int k=0;k<=hspe->FindBin(maxfitrange);k++){
-                    Double_t diff = hspe->GetBinContent(k)/fit->Eval(hspe->GetBinCenter(k));
-                    Double_t error = hspe->GetBinError(k)/fit->Eval(hspe->GetBinCenter(k));
-                    resid->SetBinContent(k,diff);
-                    resid->SetBinError(k,error);
-                    //if(hspe->GetBinContent(k)) resid->SetBinContent(k,(hspe->GetBinContent(k)-fit->Eval(hspe->GetBinCenter(k)))/hspe->GetBinError(k));
+                for(int k=0;k<=hspe[ipmt-1]->FindBin(maxfitrange);k++){
+                    Double_t diff = hspe[ipmt-1]->GetBinContent(k)/fit->Eval(hspe[ipmt-1]->GetBinCenter(k));
+                    Double_t error = hspe[ipmt-1]->GetBinError(k)/fit->Eval(hspe[ipmt-1]->GetBinCenter(k));
+                    resid[ipmt-1]->SetBinContent(k,diff);
+                    resid[ipmt-1]->SetBinError(k,error);
+                    //if(hspe[ipmt-1]->GetBinContent(k)) resid[ipmt-1]->SetBinContent(k,(hspe[ipmt-1]->GetBinContent(k)-fit->Eval(hspe[ipmt-1]->GetBinCenter(k)))/hspe[ipmt-1]->GetBinError(k));
                 }
 
-                resid->GetXaxis()->SetRangeUser(0, 100 /*200*/);
-                resid->SetMaximum(3);
-                //	resid->SetMinimum(-10);
-                resid->SetLineColor(kBlack);
-                resid->SetMarkerStyle(20);
-                resid->SetMarkerSize(1);
-                resid->SetLabelSize(0.15);
-                resid->SetLabelSize(0.15,"Y");
-                resid->SetStats(false);
-                resid->SetTitle("");
-                resid->SetXTitle("Charge [fC]");
-                resid->GetXaxis()->SetTitleSize(0.15);
-                resid->DrawClone("PE");
-                //resid->Delete();
+                resid[ipmt-1]->GetXaxis()->SetRangeUser(0, 100 /*200*/);
+                resid[ipmt-1]->SetMaximum(3);
+                //resid[ipmt-1]->SetMinimum(-2);
+                resid[ipmt-1]->SetLineColor(kBlack);
+                resid[ipmt-1]->SetMarkerStyle(20);
+                resid[ipmt-1]->SetMarkerSize(1);
+                resid[ipmt-1]->SetLabelSize(0.15);
+                resid[ipmt-1]->SetLabelSize(0.15,"Y");
+                resid[ipmt-1]->SetStats(false);
+                resid[ipmt-1]->SetTitle("");
+                resid[ipmt-1]->SetXTitle("LADC counts");
+                resid[ipmt-1]->GetXaxis()->SetTitleSize(0.15);
+                resid[ipmt-1]->Draw("PE");
+                //resid[ipmt-1]->Delete();
             }
 
             if(drawflag[irbx][ibb]) { //draw plots of fit if data for the HV is present

@@ -10,6 +10,8 @@
 #include "TH2D.h"
 #include "TCanvas.h"
 #include "TMathBase.h"
+#include "TColor.h"
+#include "TStyle.h"
 
 using namespace std;
 
@@ -17,6 +19,18 @@ float Min(float a, float b) { return a <= b ? a : b; }
 
 void SPECompare()
 { 
+    // Palette Color scheme -------------------------------------------
+    const Int_t NRGBs = 5;
+    const Int_t NCont = 255;
+
+    Double_t stops[NRGBs] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
+    Double_t red[NRGBs] = { 0.00, 0.00, 0.87, 1.00, 0.51 };
+    Double_t green[NRGBs] = { 0.00, 0.81, 1.00, 0.20, 0.00 };
+    Double_t blue[NRGBs] = { 0.51, 1.00, 0.12, 0.00, 0.00 };
+    TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont);
+    gStyle->SetNumberContours(NCont);
+    // ----------------------------------------------------------------
+    
     //
     // Get jae numbers
     //
@@ -44,7 +58,7 @@ void SPECompare()
     TH2D *h2_jae = new TH2D("h2_jae","h2_jae",24,0,24,36,0,36);
 
     string line_jae;
-    ifstream infile_jae ("SPEconstants_Run_254743_test_mode_1.txt");
+    ifstream infile_jae ("SPEconstants_Run_254743_test_mode_1_NoFix2sigma.txt");
 
     if (infile_jae.is_open())
     {
@@ -81,7 +95,7 @@ void SPECompare()
     infile_jae.close();
 
     //
-    // Get Katrina's numbers
+    // Get kathrina's numbers
     //
 
     //ROBOX   BB    PMT   OV1 Gain OV2 Gain OV1+100
@@ -92,22 +106,22 @@ void SPECompare()
     float OV2Gain;
     float OV1plus100Gain;
 
-    TH1D *h1_katrina = new TH1D("h1_katrina","h1_katrina",50,0,240000);
-    TH2D *h2_katrina = new TH2D("h2_katrina","h2_katrina",24,0,24,36,0,36);
+    TH1D *h1_kathrina = new TH1D("h1_kathrina","h1_kathrina",50,0,240000);
+    TH2D *h2_kathrina = new TH2D("h2_kathrina","h2_kathrina",24,0,24,36,0,36);
 
-    string line_katrina;
-    ifstream infile_katrina ("Led_Gain_Map_HFP.txt");
+    string line_kathrina;
+    ifstream infile_kathrina ("PMTGainDB/Led_Gain_Map_HFP.txt");
 
-    if (infile_katrina.is_open())
+    if (infile_kathrina.is_open())
     {
-        while ( infile_katrina.good() )
+        while ( infile_kathrina.good() )
         {
-            // get a line_katrina from input file
-            getline (infile_katrina,line_katrina); 
+            // get a line_kathrina from input file
+            getline (infile_kathrina,line_kathrina); 
 
-            if( line_katrina.find("#")!=string::npos ) continue;
+            if( line_kathrina.find("#")!=string::npos ) continue;
 
-            stringstream stream(line_katrina);
+            stringstream stream(line_kathrina);
             stream >> ROBOX; 
             stream >> BB; 
             stream >> PMT; 
@@ -115,19 +129,19 @@ void SPECompare()
             stream >> OV2Gain; 
             stream >> OV1plus100Gain; 
 
-            h1_katrina->Fill(Min((float)OV2Gain,(float)(240000-0.0001)));
-            h2_katrina->SetBinContent((BB-1)*8+PMT,ROBOX,OV2Gain);
+            h1_kathrina->Fill(Min((float)OV2Gain,(float)(240000-0.0001)));
+            h2_kathrina->SetBinContent((BB-1)*8+PMT,ROBOX,OV2Gain);
 
-            if( !infile_katrina.good() ) continue;
+            if( !infile_kathrina.good() ) continue;
         }
     }
-    infile_katrina.close();
+    infile_kathrina.close();
 
     // Difference 
     TH2D* h2_diff = (TH2D*) h2_jae->Clone("h2_diff"); 
-    h2_diff->Add(h2_katrina,-1);
-    h2_diff->Divide(h2_katrina);
-    h2_diff->SetTitle("jae-katrina/katrina");
+    h2_diff->Add(h2_kathrina,-1);
+    h2_diff->Divide(h2_kathrina);
+    h2_diff->SetTitle("jae-kathrina/kathrina");
     // Difference 1D
     TH1D *h1_diff = new TH1D("h1_diff","h1_diff",50,-1,1); 
     for(int x=1; x<=24; x++)  
@@ -138,10 +152,10 @@ void SPECompare()
             if(h2_jae->GetBinContent(x,y)==0) h2_diff->SetBinContent(x,y,-1.1);
         } 
     }
-    h1_diff->SetTitle("jae-katrina/katrina");
+    h1_diff->SetTitle("jae-kathrina/kathrina");
 
 
-    TCanvas *c = new TCanvas("c","c",1200,800);
+    TCanvas *c = new TCanvas("c","c",1800,800);
     c->Divide(3,2);
     c->cd(1);
     h2_jae->SetMinimum(0);
@@ -149,10 +163,10 @@ void SPECompare()
     h2_jae->SetStats(0);
     h2_jae->Draw("colz");
     c->cd(2);
-    h2_katrina->SetMinimum(0);
-    h2_katrina->SetMaximum(240000);
-    h2_katrina->SetStats(0);
-    h2_katrina->Draw("colz");
+    h2_kathrina->SetMinimum(0);
+    h2_kathrina->SetMaximum(240000);
+    h2_kathrina->SetStats(0);
+    h2_kathrina->Draw("colz");
     c->cd(3);
     h2_diff->SetMinimum(-1);
     h2_diff->SetMaximum(1);
@@ -161,9 +175,27 @@ void SPECompare()
     c->cd(4); 
     h1_jae->Draw("hist");
     c->cd(5); 
-    h1_katrina->Draw("hist");
+    h1_kathrina->Draw("hist");
     c->cd(6); 
     h1_diff->Draw("hist");
+    c->Print("SPEcompare.pdf");
+  
+    // 
+    TH2D *h2_scatter = new TH2D("h2_scatter","h2_scatter",100,0,240000,100,0,240000);
+    TCanvas *cscatter = new TCanvas("cscatter","cscatter",600,400);
+    for(int x=1; x<=24; x++)  
+    { 
+        for(int y=1; y<=36; y++)  
+        { 
+            if(h2_jae->GetBinContent(x,y)!=0) h2_scatter->Fill(h2_jae->GetBinContent(x,y),h2_kathrina->GetBinContent(x,y));
+        } 
+    }
+    cscatter->cd(1);  
+    h2_scatter->SetStats(0);
+    h2_scatter->SetTitle("Gain (x:Jae y:Kathrina)");
+    h2_scatter->SetXTitle("Jae");
+    h2_scatter->SetYTitle("Kathrina");
+    h2_scatter->Draw("colz");
+    cscatter->Print("SPEscatter.pdf");
 
-    c->Print("~/www/tmp/SPEcompare.pdf");
 }
